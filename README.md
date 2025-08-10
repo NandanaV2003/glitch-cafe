@@ -16,7 +16,7 @@ A neon-lit web café where the menu changes every second — order at your own r
 - [Any other libraries you used — list them here]
 
 ## 🌐 Hosted Project Link
-- [Live Project](PASTE_YOUR_HOSTED_LINK_HERE)
+- [Live Project](https://nandanav2003.github.io/glitch-cafe/)
 
 ## 📝 Project Description
 Glitch Café is a cyberpunk-themed virtual café where the menu changes every second and each item has a quirky, unpredictable side effect.  
