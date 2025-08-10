@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Glitch Café</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <div class="container">
+    <h1 class="title">☕ Glitch Café 💻</h1>
+
+    <section class="menu-section">
+      <h2>Today's Menu (changes every second)</h2>
+      <ul id="menu"></ul>
+    </section>
+
+    <section class="order-section">
+      <h2>Place Your Order</h2>
+      <input type="text" id="orderInput" placeholder="Type item name here"/>
+      <button id="orderBtn">Order</button>
+      <p id="orderMessage"></p>
+    </section>
+
+    <section class="reviews-section">
+      <h2>Glitchy Reviews</h2>
+      <ul id="reviews"></ul>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
