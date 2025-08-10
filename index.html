@@ -1,35 +1,394 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Glitch Café</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Glitch Café — Cyberpunk Menu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#050507;
+      --panel: rgba(0,0,0,0.45);
+      --neon-pink: #ff1493;
+      --neon-cyan: #00ffff;
+      --neon-green: #00ff80;
+      --neon-yellow:#ffd966;
+      --glass: rgba(255,255,255,0.03);
+      --accent: linear-gradient(90deg,var(--neon-pink),var(--neon-cyan));
+    }
+    html,body{height:100%;margin:0;background:radial-gradient(circle at 10% 10%, rgba(255,20,147,0.03), transparent 10%), radial-gradient(circle at 90% 90%, rgba(0,255,255,0.02), transparent 10%), var(--bg); font-family: 'Share Tech Mono', monospace; color:var(--neon-green); overflow:hidden;}
+    /* Matrix rain canvas */
+    #matrix{position:fixed;left:0;top:0;width:100%;height:100%;z-index:0;mix-blend-mode:screen;opacity:0.12;filter: blur(0.6px);}
+    /* Layout */
+    .app{position:relative;z-index:3;display:grid;grid-template-columns: 1fr 360px;gap:20px;padding:28px;height:100vh;box-sizing:border-box;}
+    header{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:10px 20px 20px 20px;z-index:5;}
+    .logo{font-family:'Orbitron',sans-serif;font-weight:700;font-size:34px;letter-spacing:2px;color:var(--neon-pink);text-shadow:0 0 18px rgba(255,20,147,0.65),0 0 34px rgba(0,255,255,0.08);display:flex;align-items:center;gap:12px}
+    .logo .dot{width:14px;height:14px;border-radius:50%;background:var(--neon-cyan);box-shadow:0 0 16px var(--neon-cyan);}
+    .subtitle{color:rgba(0,255,128,0.7);font-size:12px;margin-top:2px}
+    main{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter: blur(6px);border-radius:12px;padding:18px;box-shadow:0 6px 40px rgba(0,0,0,0.7);overflow:auto;z-index:4;}
+    aside.panel{height:calc(100vh - 120px);overflow:auto;background:var(--panel);border-radius:12px;padding:18px;box-shadow:inset 0 0 40px rgba(0,0,0,0.6);}
+    h1{font-family:'Orbitron';font-size:28px;color:var(--neon-cyan);margin:0 0 6px 0;text-shadow:0 0 10px rgba(0,255,255,0.15);}
+    p.lead{color:rgba(255,255,255,0.6);font-size:13px;margin:0 0 16px 0}
+    /* Menu grid */
+    .menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .item{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);position:relative;overflow:hidden;cursor:pointer;transition:transform .18s ease, box-shadow .18s ease;}
+    .item:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(0,0,0,0.6);}
+    .item .title{font-weight:700;color:var(--neon-pink);font-size:16px;text-shadow:0 0 12px rgba(255,20,147,0.12)}
+    .item .meta{font-size:12px;color:rgba(255,255,255,0.6);margin-top:6px}
+    .price{position:absolute;right:10px;top:10px;background:linear-gradient(90deg,var(--neon-pink),var(--neon-cyan));padding:6px 10px;border-radius:8px;color:#041; font-weight:700;box-shadow:0 0 16px rgba(0,255,255,0.06)}
+    .glitch{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;}
+    /* cart */
+    .cart{display:flex;flex-direction:column;gap:12px}
+    .cart h3{margin:0;color:var(--neon-yellow)}
+    .cart-list{background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;min-height:60px;max-height:240px;overflow:auto}
+    .cart-row{display:flex;justify-content:space-between;align-items:center;padding:6px 2px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+    .btn{background:var(--neon-pink);border:none;padding:10px 12px;border-radius:8px;color:#001;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(255,20,147,0.12);}
+    .btn.secondary{background:transparent;color:var(--neon-cyan);border:1px solid rgba(0,255,255,0.12)}
+    input,textarea,select{background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.03);color:var(--neon-green);padding:8px;border-radius:6px;width:100%;box-sizing:border-box;font-family:inherit}
+    label{font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px}
+    /* Glitchy review area */
+    .reviews{margin-top:12px;padding:12px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.1));border-radius:8px;min-height:120px;position:relative}
+    .review-text{font-size:15px;line-height:1.3;color:rgba(255,255,255,0.9);}
+    .glitchy{font-weight:700;color:var(--neon-green);text-shadow:0 0 8px rgba(0,255,128,0.12);}
+    /* visual side effects */
+    .effect-invert{filter:invert(1) hue-rotate(180deg);transition:filter .6s ease}
+    .effect-blur{filter:blur(2px) saturate(1.4);transition:filter .6s ease}
+    .effect-scan{box-shadow:inset 0 0 0 9999px rgba(0,255,255,0.02);animation:scanline 0.8s linear;}
+    @keyframes scanline{0%{background-position:0 0}100%{background-position:0 100%}}
+    /* tiny neon footer */
+    footer{grid-column:1/3;margin-top:8px;color:rgba(255,255,255,0.2);font-size:12px;display:flex;justify-content:space-between;align-items:center;padding:8px 20px;}
+    /* glitch text animation */
+    .corrupt{display:inline-block;position:relative}
+    .corrupt::after,.corrupt::before{content:attr(data-text);position:absolute;left:0;top:0;right:0;color:transparent;text-shadow:0 0 18px rgba(255,20,147,0.5);mix-blend-mode:screen;opacity:0.7}
+    .corrupt::before{transform:translate(2px,-2px) skew(-6deg);clip-path:polygon(0 0,100% 0,100% 60%,0 60%);}
+    .corrupt::after{transform:translate(-2px,2px) skew(6deg);clip-path:polygon(0 40%,100% 40%,100% 100%,0 100%);}
+    /* responsive */
+    @media (max-width:900px){.app{grid-template-columns:1fr;}.panel{height:auto}header{flex-direction:column;align-items:flex-start}aside.panel{order:2}main{order:1}}
+  </style>
 </head>
 <body>
   <canvas id="matrix"></canvas>
+  <div class="app" id="app">
+    <header>
+      <div>
+        <div class="logo"><div class="dot"></div>GLITCH CAFÉ</div>
+        <div class="subtitle">menu refreshes every second · odd side effects · mysterious reviews</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn" id="btn-refresh">Manual Refresh</button>
+        <button class="btn secondary" id="btn-clear">Clear Orders</button>
+      </div>
+    </header>
 
-  <div class="container">
-    <h1 class="title">☕ Glitch Café 💻</h1>
+    <main id="main">
+      <h1>Today's (unstable) Menu</h1>
+      <p class="lead">Items on this menu are unstable — prices flicker, effects may apply when ordered. Click an item to add to cart.</p>
+      <div class="menu-grid" id="menuGrid" aria-live="polite"></div>
 
-    <section class="menu-section">
-      <h2>Today's Menu (changes every second)</h2>
-      <ul id="menu"></ul>
-    </section>
+      <section class="reviews" aria-live="polite">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:var(--neon-pink)">GLITCHY REVIEWS</strong>
+          <small style="color:rgba(255,255,255,0.4)">sometimes helpful. sometimes haunted.</small>
+        </div>
+        <div id="reviewArea" class="review-text" style="margin-top:10px">
+          <span id="reviewText" class="corrupt" data-text="">Loading... </span>
+        </div>
+      </section>
+    </main>
 
-    <section class="order-section">
-      <h2>Place Your Order</h2>
-      <input type="text" id="orderInput" placeholder="Type item name here"/>
-      <button id="orderBtn">Order</button>
-      <p id="orderMessage"></p>
-    </section>
+    <aside class="panel">
+      <div class="cart">
+        <h3>Order Cart</h3>
+        <div class="cart-list" id="cartList">Your cart is empty.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="btn-order">Place Order</button>
+          <button class="btn secondary" id="btn-empty">Empty</button>
+        </div>
 
-    <section class="reviews-section">
-      <h2>Glitchy Reviews</h2>
-      <ul id="reviews"></ul>
-    </section>
+        <div style="margin-top:12px">
+          <h3 style="margin-bottom:6px">Order Form</h3>
+          <label for="customerName">Name</label>
+          <input id="customerName" placeholder="Your alias..." />
+          <label for="customerAddr">Address / Delivery Note</label>
+          <textarea id="customerAddr" rows="2" placeholder="e.g. Neon Alley, 3rd Rack"></textarea>
+          <label for="customerNote">Special request</label>
+          <input id="customerNote" placeholder="Don't taste the blue steam..." />
+        </div>
+        <div style="margin-top:12px">
+          <small style="color:rgba(255,255,255,0.3)">Orders are simulated locally. Hook up a backend at the placeholder below.</small>
+          <pre style="background:rgba(0,0,0,0.25);padding:8px;border-radius:6px;margin-top:8px;color:var(--neon-cyan);font-size:12px;overflow:auto">/* BACKEND HOOK: add fetch('/api/order', {method:'POST', body: JSON.stringify(order)}) */</pre>
+          <!-- CODE GOES HERE: Insert your backend integration code above -->
+        </div>
+        <div class="reviews" style="margin-top:12px">
+          <strong style="color:var(--neon-pink)">Order History</strong>
+          <div id="historyList" style="margin-top:8px;max-height:120px;overflow:auto;color:rgba(255,255,255,0.9)"></div>
+        </div>
+      </div>
+    </aside>
+
+    <footer>crafted with neon & corrupted bytes · <span id="status">Live</span></footer>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    /* ---------------------- Matrix Rain ---------------------- */
+    (function(){
+      const canvas = document.getElementById('matrix');
+      const ctx = canvas.getContext('2d');
+      function resize(){canvas.width = innerWidth; canvas.height = innerHeight;}
+      window.addEventListener('resize', resize); resize();
+      const fontSize = 14;
+      let columns = Math.floor(canvas.width / fontSize);
+      let drops = new Array(columns).fill(1);
+      const letters = "01一二三四五六七八九零abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@#%&*";
+      function draw(){
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = 'rgba(0,255,128,0.08)';
+        ctx.font = fontSize + 'px monospace';
+        for(let i=0;i<drops.length;i++){
+          const text = letters.charAt(Math.floor(Math.random()*letters.length));
+          ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+          if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i]=0;
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 45);
+    })();
+
+    /* ---------------------- Site Data & Utilities ---------------------- */
+    const baseItems = [
+      {name:'Neon Espresso', basePrice:1.5},
+      {name:'Synth Milk Latte', basePrice:2.5},
+      {name:'Corrupted Cold Brew', basePrice:2.1},
+      {name:'Photon Tea', basePrice:1.2},
+      {name:'Holo Cake', basePrice:3.4},
+      {name:'Memory Macaron', basePrice:1.8},
+      {name:'Blue Steam Shot', basePrice:2.0},
+      {name:'Ghost Mocha', basePrice:2.7},
+      {name:'Quantum Cookie', basePrice:1.6},
+    ];
+    const adjectives = ['Glitched','Flicker','Iridescent','Synthetic','Binary','Spectral','Distant','Eternal','Phantom','Hollow','Frayed','Pixel'];
+    const effects = [
+      {id:'invert',label:'Invert senses',className:'effect-invert',desc:'Colors invert briefly'},
+      {id:'blur',label:'Soft memory',className:'effect-blur',desc:'Vision blurs for a second'},
+      {id:'scan',label:'Scanline',className:'effect-scan',desc:'Subtle scanline overlay'},
+      {id:'echo',label:'Echo',className:'',desc:'Your name echoes in the review feed'},
+      {id:'glow',label:'Neon Glow',className:'',desc:'Item leaves a neon afterimage'},
+    ];
+
+    function randomFrom(arr){return arr[Math.floor(Math.random()*arr.length)];}
+    function fmt(n){return '$'+(n.toFixed(2));}
+
+    /* ---------------------- Menu generator (changes every second) ---------------------- */
+    const menuGrid = document.getElementById('menuGrid');
+    let currentMenu = [];
+    function generateMenu(){
+      currentMenu = [];
+      // produce 6-9 items each refresh
+      const count = 6 + Math.floor(Math.random()*4);
+      for(let i=0;i<count;i++){
+        const base = randomFrom(baseItems);
+        const adj = randomFrom(adjectives);
+        const priceFluct = (Math.random()*1.6)-0.8; // +/- .80
+        const price = Math.max(0.5, base.basePrice + priceFluct);
+        const effect = randomFrom(effects);
+        currentMenu.push({
+          id: 'it-' + Date.now() + '-' + i,
+          title: adj + ' ' + base.name,
+          desc: effect.desc,
+          price,
+          effect: effect.id
+        });
+      }
+      renderMenu();
+    }
+    function renderMenu(){
+      menuGrid.innerHTML='';
+      currentMenu.forEach(it=>{
+        const div = document.createElement('div');
+        div.className='item';
+        div.tabIndex=0;
+        div.innerHTML = `
+          <div class="title">${escapeHtml(it.title)}</div>
+          <div class="meta">${escapeHtml(it.desc)}</div>
+          <div class="price">${fmt(it.price)}</div>
+          <div class="glitch" aria-hidden="true"></div>
+        `;
+        div.addEventListener('click', ()=> addToCart(it));
+        div.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addToCart(it); });
+        menuGrid.appendChild(div);
+      });
+    }
+
+    // escape helper
+    function escapeHtml(s){return String(s).replace(/[&<>"']/g, function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);});}
+
+    // auto refresh every second
+    let menuTimer = setInterval(generateMenu, 1000);
+    // manual refresh
+    document.getElementById('btn-refresh').addEventListener('click', ()=>{ generateMenu(); flashStatus('manual refresh'); });
+
+    /* ---------------------- Cart & Ordering (client-side simulated) ---------------------- */
+    let cart = [];
+    const cartList = document.getElementById('cartList');
+    function addToCart(item){
+      // apply visual side effect to page element
+      const el = Array.from(document.querySelectorAll('.item')).find(d=> d.querySelector('.title') && d.querySelector('.title').textContent === item.title);
+      triggerSideEffect(item.effect, el);
+      const existing = cart.find(c=>c.title===item.title);
+      if(existing) existing.qty++;
+      else cart.push({title:item.title,price:item.price,qty:1});
+      renderCart();
+      // small "echo" effect in reviews if the effect is echo
+      if(item.effect==='echo') appendReview(`"${item.title}" whispered your alias...`);
+    }
+
+    function renderCart(){
+      if(cart.length===0){ cartList.innerHTML='Your cart is empty.'; return; }
+      cartList.innerHTML='';
+      cart.forEach((c,idx)=>{
+        const row = document.createElement('div'); row.className='cart-row';
+        row.innerHTML = `<div>${escapeHtml(c.title)} <small style="color:rgba(255,255,255,0.3)">x${c.qty}</small></div><div>${fmt(c.price*c.qty)}</div>`;
+        cartList.appendChild(row);
+      });
+      const total = cart.reduce((s,i)=>s+(i.price*i.qty),0);
+      const totRow = document.createElement('div'); totRow.className='cart-row'; totRow.style.fontWeight='700'; totRow.innerHTML=`<div>TOTAL</div><div>${fmt(total)}</div>`;
+      cartList.appendChild(totRow);
+    }
+
+    document.getElementById('btn-empty').addEventListener('click', ()=>{ cart=[]; renderCart(); flashStatus('cart cleared'); });
+    document.getElementById('btn-clear').addEventListener('click', ()=>{ localStorage.removeItem('glitchOrders'); document.getElementById('historyList').innerHTML=''; flashStatus('orders cleared'); });
+
+    document.getElementById('btn-order').addEventListener('click', ()=>{
+      if(cart.length===0){ flashStatus('cart empty'); return; }
+      const order = {
+        id: 'ord-'+Date.now(),
+        name: document.getElementById('customerName').value || 'anonymous',
+        addr: document.getElementById('customerAddr').value || '',
+        note: document.getElementById('customerNote').value || '',
+        items: cart.map(c=>({title:c.title,qty:c.qty,price:c.price})),
+        total: cart.reduce((s,i)=>s+(i.qty*i.price),0),
+        when: new Date().toISOString()
+      };
+      // place holder for backend integration
+      // === CODE GOES HERE: Send `order` to your server using fetch/axios ===
+      saveOrderLocally(order);
+      cart = [];
+      renderCart();
+      flashStatus('order placed');
+      showOrderConfirmation(order);
+    });
+
+    function saveOrderLocally(order){
+      const arr = JSON.parse(localStorage.getItem('glitchOrders')||'[]');
+      arr.unshift(order);
+      localStorage.setItem('glitchOrders', JSON.stringify(arr));
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const arr = JSON.parse(localStorage.getItem('glitchOrders')||'[]');
+      const el = document.getElementById('historyList');
+      if(arr.length===0){ el.innerHTML = '<small style="color:rgba(255,255,255,0.3)">No orders yet</small>'; return; }
+      el.innerHTML='';
+      arr.slice(0,8).forEach(o=>{
+        const d = document.createElement('div'); d.style.padding='6px 0'; d.style.borderBottom='1px dashed rgba(255,255,255,0.03)';
+        d.innerHTML = `<div style="font-weight:700;color:var(--neon-cyan)">${escapeHtml(o.name)} <small style="color:rgba(255,255,255,0.2)">${new Date(o.when).toLocaleString()}</small></div><div style="font-size:12px">${escapeHtml(o.items.map(it=>it.title+' x'+it.qty).join(', '))}</div>`;
+        el.appendChild(d);
+      });
+    }
+
+    /* ---------------------- Side Effects Implementation ---------------------- */
+    function triggerSideEffect(effectId, el){
+      // simplest DOM-level visual effects. You can replace with more elaborate code.
+      const target = document.body;
+      if(effectId==='invert'){ target.classList.add('effect-invert'); setTimeout(()=>target.classList.remove('effect-invert'),700); }
+      if(effectId==='blur'){ target.classList.add('effect-blur'); setTimeout(()=>target.classList.remove('effect-blur'),900); }
+      if(effectId==='scan'){ target.classList.add('effect-scan'); setTimeout(()=>target.classList.remove('effect-scan'),900); }
+      if(effectId==='glow'){ if(el){ el.style.boxShadow='0 10px 40px rgba(0,255,255,0.12)'; setTimeout(()=>el.style.boxShadow='',700);} }
+      if(effectId==='echo'){ appendReview('An echo drifts through the café...'); }
+      // small local glitch on the item clicked
+      if(el){ el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'),500); }
+    }
+
+    /* ---------------------- Glitchy Reviews ---------------------- */
+    const sampleReviews = [
+      "I tasted a memory and it was bittersweet.",
+      "The neon steam rewired my afternoon.",
+      "Ordered a Phantom and my shoelaces disappeared.",
+      "Do not look at the left mirror while sipping.",
+      "Five stars? Maybe. I woke up with a barcode on my wrist.",
+      "The cookie hummed in a minor key.",
+      "My reflection left a note on the cup.",
+      "They wrote my name in green on the wall.",
+      "Server was a hologram, tip him well."
+    ];
+    const reviewText = document.getElementById('reviewText');
+    let reviewSeed = 0;
+    function appendReview(txt){
+      // push into rotating list stored in localStorage for persistence
+      const list = JSON.parse(localStorage.getItem('glitchReviews')||'[]');
+      list.unshift({t:txt, when:new Date().toISOString()});
+      localStorage.setItem('glitchReviews', JSON.stringify(list.slice(0,50)));
+    }
+    function pickReview(){
+      const list = JSON.parse(localStorage.getItem('glitchReviews')||'[]');
+      const pool = list.length ? list.map(x=>x.t).concat(sampleReviews) : sampleReviews;
+      return randomFrom(pool);
+    }
+    // glitchy text animator
+    function glitchTextLoop(){
+      const text = pickReview();
+      reviewText.dataset.text = text;
+      // render corrupted variations frame-by-frame
+      const frames = 12;
+      let frame=0;
+      const orig = text.split('');
+      const chars = "█▓▒░◆◇<>[]{}~@#%&*0123456789";
+      const iv = setInterval(()=>{
+        let out = orig.map((ch,i)=>{
+          if(Math.random() < (0.12 + frame*0.02)) return chars.charAt(Math.floor(Math.random()*chars.length));
+          return ch;
+        }).join('');
+        reviewText.textContent = out;
+        frame++;
+        if(frame>frames){ clearInterval(iv); reviewText.textContent = text; }
+      },70);
+    }
+    setInterval(glitchTextLoop, 2500);
+    glitchTextLoop();
+
+    /* ---------------------- Utilities & Status UI ---------------------- */
+    function flashStatus(msg){
+      const st = document.getElementById('status');
+      st.textContent = msg;
+      st.style.color = 'var(--neon-cyan)';
+      setTimeout(()=>{ st.textContent='Live'; st.style.color=''; },900);
+    }
+
+    function showOrderConfirmation(order){
+      const conf = document.createElement('div');
+      conf.style.position='fixed'; conf.style.left='50%'; conf.style.top='50%'; conf.style.transform='translate(-50%,-50%)'; conf.style.zIndex=9999;
+      conf.style.background='linear-gradient(90deg, rgba(0,0,0,0.85), rgba(0,0,0,0.95))'; conf.style.padding='22px'; conf.style.borderRadius='12px'; conf.style.boxShadow='0 30px 80px rgba(0,0,0,0.9)';
+      conf.innerHTML = `<div style="color:var(--neon-cyan);font-weight:800;font-size:18px">Order Received</div><div style="margin-top:8px;color:rgba(255,255,255,0.9)">Thanks, ${escapeHtml(order.name)} — your order has been logged locally.</div><div style="margin-top:10px"><button class="btn" id="confClose">Close</button></div>`;
+      document.body.appendChild(conf);
+      document.getElementById('confClose').addEventListener('click', ()=> conf.remove());
+    }
+
+    // initial
+    generateMenu();
+    renderCart();
+    renderHistory();
+
+    // small accessibility: stop auto refresh when user focuses inputs
+    ['customerName','customerAddr','customerNote'].forEach(id=>{
+      const el = document.getElementById(id);
+      el.addEventListener('focus', ()=>{ clearInterval(menuTimer); document.getElementById('status').textContent='Paused'; });
+      el.addEventListener('blur', ()=>{ menuTimer = setInterval(generateMenu,1000); document.getElementById('status').textContent='Live'; });
+    });
+
+    // expose some hooks for you to modify in console
+    window.GlitchCafe = {generateMenu, addToCart, getCart:()=>cart, saveOrderLocally, triggerSideEffect};
+  </script>
 </body>
 </html>
